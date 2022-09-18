@@ -41,12 +41,11 @@ VALCONT=0
 
 # Extracted helper functions 
 getEpochFromSlot() {
-  local slot=$1
-  echo $((slot / SLOTS_PER_EPOCH))
+  echo $(( $1 / SLOTS_PER_EPOCH))
   }
 
 epochToTime(){
-  echo $((MIN_GENESIS_TIME + ( $1 * SLOTS_PER_EPOCH * SECONDS_PER_SLOT )))
+  echo $(( MIN_GENESIS_TIME + ( $1 * SLOTS_PER_EPOCH * SECONDS_PER_SLOT ) ))
   }
 
 timeToEpoch(){
@@ -85,28 +84,26 @@ main () {
   updateTicks
 
   # Check current epoch for proposals and sync committee
-  local slotstogo=$(slotsRemaining)
-  local secs=$((slotstogo * SECONDS_PER_SLOT))
   logit
-  logit "Actually Slot $CURRENT_SLOT in Epoch $CURRENT_EPOCH. $slotstogo slots remaining" # (~$secs seconds)"
+  logit "[curr] Slot $CURRENT_SLOT in Epoch $CURRENT_EPOCH. $(slotsRemaining) slots remaining"
   checkProposals $CURRENT_EPOCH
   checkSyncCommittee $CURRENT_EPOCH
+  logit "[curr] $(($(slotsRemaining) * SECONDS_PER_SLOT)) seconds remaining in Epoch $CURRENT_EPOCH"
+
 
   # Check next epoch for proposals
-  local nextepoctime=$(epochTime $NEXT_EPOCH)
   logit
-  logit "Next Epoch $NEXT_EPOCH expecting to begin $nextepoctime"
+  logit "[next] Epoch $NEXT_EPOCH expected to start  $(epochTime $((NEXT_EPOCH)))"
   checkProposals $NEXT_EPOCH
-  #farsecs=$((SLOTS_PER_EPOCH * SECONDS_PER_SLOT + secs))
-  logit "Next Epoch $NEXT_EPOCH expected to end by $(epochTime $((NEXT_EPOCH + 1)))" # (~$farsecs seconds)"
+  logit "[next] Epoch $NEXT_EPOCH expected to end by $(epochTime $((NEXT_EPOCH + 1)))"
 
   # Check next sync committee
   local nextsynctime=$(epochTime $SYNC_NEXT_EPOCH)
   logit
-  logit "Next Sync Committee scheduled for Epoch $SYNC_NEXT_EPOCH ($nextsynctime)"
+  logit "[futr] Sync Committee scheduled for Epoch $SYNC_NEXT_EPOCH ($nextsynctime)"
   checkSyncCommittee $SYNC_NEXT_EPOCH
   local futuresynctime=$(epochTime $SYNC_FUTURE_EPOCH)
-  logit "Next Sync Committee to end after  Epoch $((SYNC_FUTURE_EPOCH - 1)) ($futuresynctime)"
+  logit "[futr] Sync Committee to end after  Epoch $((SYNC_FUTURE_EPOCH - 1)) ($futuresynctime)"
   }
 
 
@@ -114,8 +111,17 @@ init() {
   logit "ENDPOINT=$ENDPOINT DAEMON=$DAEMON VERBOSE=$VERBOSE"
   checkValidators
   local estepoc=$(timeToEpoch $(date +%s))
-  local estslot=$(timeToSlot $(date +%s))
-  logit "Estimate Slot $estslot in Epoch $estepoc"
+  # local estslot=$(timeToSlot $(date +%s))
+  # logit "Estimate Slot $estslot in Epoch $estepoc"
+
+  #logit "Epoch $estepoc began around $(epochTime $estepoc)"
+
+  # if [ test -e jq ]; then
+  #   echo 'Found jq'
+  #   else 
+  #     logit "Did not find jq commend. Install jq from your favorite package manager"
+  #     exit 3
+  # fi
   }
 
 checkValidators(){
@@ -129,8 +135,9 @@ checkValidators(){
   }
 
 checkProposals() {
-  #logit "Checking for proposals"
   local epoch=$1
+
+  # logit "Checking for proposals in Epoch $epoch"
   local propfile="proposals_${epoch}"
   local tempfile="${DIFF_FILE}_pro_${epoch}"
 
@@ -154,8 +161,9 @@ checkProposals() {
   }
 
 checkSyncCommittee() {
-  #logit "Checking for sync duties"
   local epoch=$1
+
+  # logit "Checking for sync duties in Epoch $epoch"
   local commfile="synccomittee_${epoch}"
   local tempfile="${DIFF_FILE}_com_${epoch}"
 
@@ -185,8 +193,8 @@ checkSyncCommittee() {
 
 logit () {
   if [[ $VERBOSE == true || $2 == true ]]; then
-    #echo  "`date +"%Y-%m-%d %T"`   $1"
-    echo  "   $1"
+    echo  "`date +"%Y-%m-%d %T"`   $1"
+    #echo  "   $1"
   fi
   }
 
